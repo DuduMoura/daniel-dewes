@@ -14,6 +14,13 @@ O desenvolvimento segue um fluxo estruturado de etapas:
 4. **Implementação** — Construção da solução
 5. **Validação** — Verificação da qualidade do que foi entregue
 
+## Funcionalidades
+
+- **Controle de entrada e saída** — Registro de movimentações de produtos no armazém
+- **Localização de itens** — Identificação rápida de onde cada produto está armazenado
+- **Controle de estoque mínimo** — Alertas quando produtos atingem o nível crítico
+- **Inventário** — Conferência e ajuste do estoque de forma organizada
+
 ## Contribuidores
 
 | Nome | GitHub |
