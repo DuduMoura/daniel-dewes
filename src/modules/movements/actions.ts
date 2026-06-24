@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
+import { syncAlerts } from "@/modules/alerts/service";
 import { movementSchema } from "./schema";
 
 type ActionResult =
@@ -101,9 +102,14 @@ export async function registerMovement(input: unknown): Promise<ActionResult> {
     throw error;
   }
 
+  // O saldo do produto mudou — reavalia a condição de alerta de estoque
+  // mínimo (fora da transação: efeito derivado, não desfaz a movimentação).
+  await syncAlerts(productId);
+
   // O saldo mudou — revalida as telas que o exibem.
   revalidatePath("/movimentacoes");
   revalidatePath("/produtos");
+  revalidatePath("/alertas");
   revalidatePath("/");
   return { ok: true };
 }
