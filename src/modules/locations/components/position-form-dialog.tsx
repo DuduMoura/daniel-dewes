@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useTransition } from "react";
 import { z } from "zod";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,10 @@ import {
 import { positionSchema, type PositionInput } from "../schema";
 import { createPosition, updatePosition } from "../actions";
 
-type PositionFormInput = z.input<typeof positionSchema>;
+type PositionFormInput = z.input<typeof positionSchema> & { areaId: string };
+const positionFormSchema = positionSchema.extend({
+  areaId: z.string(),
+});
 
 type AreaOption = {
   id: string;
@@ -55,34 +58,34 @@ export function PositionFormDialog({
 }: Props) {
   const isEdit = Boolean(position);
   const [isPending, startTransition] = useTransition();
-  // Área é só um filtro de UI; o valor gravado é o aisleId.
-  const [selectedAreaId, setSelectedAreaId] = useState("");
-
   const {
     register,
     handleSubmit,
     reset,
     setValue,
-    watch,
     setError,
+    control,
     formState: { errors },
   } = useForm<PositionFormInput, unknown, PositionInput>({
-    resolver: zodResolver(positionSchema),
-    defaultValues: { code: "", aisleId: "" },
+    resolver: zodResolver(positionFormSchema),
+    defaultValues: { code: "", aisleId: "", areaId: "" },
   });
 
   useEffect(() => {
     if (!open) return;
     if (position) {
-      setSelectedAreaId(position.areaId);
-      reset({ code: position.code, aisleId: position.aisleId });
+      reset({ code: position.code, aisleId: position.aisleId, areaId: position.areaId });
     } else {
-      setSelectedAreaId(defaultAreaId ?? "");
-      reset({ code: "", aisleId: defaultAisleId ?? "" });
+      reset({
+        code: "",
+        aisleId: defaultAisleId ?? "",
+        areaId: defaultAreaId ?? "",
+      });
     }
   }, [open, position, defaultAreaId, defaultAisleId, reset]);
 
-  const aisleId = watch("aisleId");
+  const selectedAreaId = useWatch({ control, name: "areaId" }) ?? "";
+  const aisleId = useWatch({ control, name: "aisleId" }) ?? "";
 
   const aislesOfArea = useMemo(
     () => areas.find((a) => a.id === selectedAreaId)?.aisles ?? [],
@@ -127,7 +130,7 @@ export function PositionFormDialog({
             <Select
               value={selectedAreaId}
               onValueChange={(v) => {
-                setSelectedAreaId(v);
+                setValue("areaId", v);
                 setValue("aisleId", ""); // troca de área zera o corredor
               }}
             >

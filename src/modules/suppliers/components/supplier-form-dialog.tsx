@@ -2,7 +2,7 @@
 
 import { useEffect, useTransition } from "react";
 import { z } from "zod";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -61,8 +61,8 @@ export function SupplierFormDialog({
     handleSubmit,
     reset,
     setValue,
-    watch,
     setError,
+    control,
     formState: { errors },
   } = useForm<SupplierFormInput, unknown, SupplierInput>({
     resolver: zodResolver(supplierSchema),
@@ -85,7 +85,7 @@ export function SupplierFormDialog({
     );
   }, [open, supplier, reset]);
 
-  const productIds = watch("productIds") ?? [];
+  const productIds = useWatch({ control, name: "productIds" }) ?? [];
 
   function toggleProduct(id: string, checked: boolean) {
     const next = checked

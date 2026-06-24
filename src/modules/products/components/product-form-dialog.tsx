@@ -2,7 +2,7 @@
 
 import { useEffect, useTransition } from "react";
 import { z } from "zod";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -71,8 +71,8 @@ export function ProductFormDialog({
     handleSubmit,
     reset,
     setValue,
-    watch,
     setError,
+    control,
     formState: { errors },
   } = useForm<ProductFormInput, unknown, ProductInput>({
     resolver: zodResolver(productSchema),
@@ -95,7 +95,7 @@ export function ProductFormDialog({
     );
   }, [open, product, reset]);
 
-  const categoryId = watch("categoryId");
+  const categoryId = useWatch({ control, name: "categoryId" }) ?? "";
 
   function onSubmit(values: ProductInput) {
     startTransition(async () => {

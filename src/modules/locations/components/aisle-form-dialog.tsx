@@ -2,7 +2,7 @@
 
 import { useEffect, useTransition } from "react";
 import { z } from "zod";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -54,8 +54,8 @@ export function AisleFormDialog({
     handleSubmit,
     reset,
     setValue,
-    watch,
     setError,
+    control,
     formState: { errors },
   } = useForm<AisleFormInput, unknown, AisleInput>({
     resolver: zodResolver(aisleSchema),
@@ -71,7 +71,7 @@ export function AisleFormDialog({
     );
   }, [open, aisle, defaultAreaId, reset]);
 
-  const areaId = watch("areaId");
+  const areaId = useWatch({ control, name: "areaId" }) ?? "";
 
   function onSubmit(values: AisleInput) {
     startTransition(async () => {

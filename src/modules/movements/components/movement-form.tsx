@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useTransition } from "react";
 import { z } from "zod";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { ArrowDownToLine, ArrowUpFromLine, Undo2, ArrowLeftRight } from "lucide-react";
@@ -65,20 +65,25 @@ export function MovementForm({ products, positions, suppliers, stock }: Props) {
     handleSubmit,
     reset,
     setValue,
-    watch,
     setError,
+    control,
     formState: { errors },
   } = useForm<MovementFormInput, unknown, MovementInput>({
     resolver: zodResolver(movementSchema),
     defaultValues: EMPTY,
   });
 
-  const type = watch("type");
-  const direction = watch("direction");
-  const productId = watch("productId");
-  const fromPositionId = watch("fromPositionId");
-  const toPositionId = watch("toPositionId");
-  const supplierId = watch("supplierId");
+  const [type, direction, productId, fromPositionId, toPositionId, supplierId] = useWatch({
+    control,
+    name: [
+      "type",
+      "direction",
+      "productId",
+      "fromPositionId",
+      "toPositionId",
+      "supplierId",
+    ],
+  });
 
   // Quais campos cada tipo exige.
   const needsTo =
