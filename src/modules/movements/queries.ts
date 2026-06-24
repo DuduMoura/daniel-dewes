@@ -66,3 +66,16 @@ export async function listStockWithBalance(): Promise<StockEntry[]> {
   });
   return items;
 }
+
+// Sugestão de posição de put-away para um produto (versão server-side),
+// reusando a estratégia pura. Carrega posições e saldos e delega.
+export async function suggestPutAwayPosition(
+  productId: string,
+): Promise<string | null> {
+  const [positions, stock] = await Promise.all([
+    listPositionOptions(),
+    listStockWithBalance(),
+  ]);
+  const { suggestPutAwayPosition: suggest } = await import("./put-away");
+  return suggest(productId, positions, stock);
+}

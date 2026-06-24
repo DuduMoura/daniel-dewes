@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useTransition } from "react";
+import { useEffect, useMemo, useTransition } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import { movementSchema, type MovementInput } from "../schema";
 import { registerMovement } from "../actions";
+import { suggestPutAwayPosition } from "../put-away";
 import type { PositionOption, StockEntry } from "../queries";
 
 type Product = { id: string; name: string; sku: string };
@@ -104,6 +105,31 @@ export function MovementForm({ products, positions, suppliers, stock }: Props) {
       .map((p) => ({ ...p, available: byPosition.get(p.id)! }));
   }, [productId, positions, stock]);
 
+  // Put-away: sugestão de posição de destino — só para entradas (ENTRADA e
+  // DEVOLUÇÃO de cliente). Saídas/transferências/devolução a fornecedor não usam.
+  const suggestedToId = useMemo(
+    () =>
+      needsTo && productId
+        ? suggestPutAwayPosition(productId, positions, stock)
+        : null,
+    [needsTo, productId, positions, stock],
+  );
+
+  // Saldo do produto por posição (para exibir na opção sugerida).
+  const productBalanceByPos = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const s of stock) if (s.productId === productId) m.set(s.positionId, s.quantity);
+    return m;
+  }, [productId, stock]);
+
+  // Pré-seleciona a posição sugerida quando o destino ainda está vazio
+  // (recalcula ao trocar o produto, que zera o destino).
+  useEffect(() => {
+    if (needsTo && suggestedToId && !toPositionId) {
+      setValue("toPositionId", suggestedToId);
+    }
+  }, [needsTo, suggestedToId, toPositionId, setValue]);
+
   function onSubmit(values: MovementInput) {
     startTransition(async () => {
       const result = await registerMovement(values);
@@ -165,6 +191,7 @@ export function MovementForm({ products, positions, suppliers, stock }: Props) {
                 onValueChange={(v) => {
                   setValue("productId", v);
                   setValue("fromPositionId", ""); // origem depende do produto
+                  setValue("toPositionId", ""); // re-pré-seleciona a sugestão de put-away
                 }}
               >
                 <SelectTrigger>
@@ -273,13 +300,25 @@ export function MovementForm({ products, positions, suppliers, stock }: Props) {
                     <SelectValue placeholder="Posição de destino" />
                   </SelectTrigger>
                   <SelectContent>
-                    {positions.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.label}
-                      </SelectItem>
-                    ))}
+                    {positions.map((p) => {
+                      const isSuggested = p.id === suggestedToId;
+                      const bal = productBalanceByPos.get(p.id);
+                      return (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.label}
+                          {isSuggested
+                            ? ` · Sugerida${bal ? ` (saldo: ${bal})` : ""}`
+                            : ""}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
+                {suggestedToId && (
+                  <p className="text-xs text-muted-foreground">
+                    Posição sugerida pré-selecionada — você pode trocar.
+                  </p>
+                )}
                 {errors.toPositionId && (
                   <p className="text-sm text-destructive">
                     {errors.toPositionId.message}
