@@ -9,6 +9,8 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    // Migrations exigem conexão DIRETA (não-pooled). Local: DATABASE_URL.
+    // Vercel + Supabase: POSTGRES_URL_NON_POOLING (porta 5432, session mode).
+    url: process.env["DATABASE_URL"] ?? process.env["POSTGRES_URL_NON_POOLING"],
   },
 });

@@ -6,8 +6,15 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-// Prisma 7 usa driver adapter; a conexão vem da DATABASE_URL (.env).
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+// Prisma 7 usa driver adapter; a conexão vem da env.
+// Local: DATABASE_URL. Vercel + Supabase: prefere a URL pooled
+// (POSTGRES_PRISMA_URL) para o runtime serverless, com fallbacks.
+const connectionString =
+  process.env.DATABASE_URL ??
+  process.env.POSTGRES_PRISMA_URL ??
+  process.env.POSTGRES_URL_NON_POOLING;
+
+const adapter = new PrismaPg({ connectionString });
 
 function createPrismaClient() {
   return new PrismaClient({
