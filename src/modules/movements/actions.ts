@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { syncAlerts } from "@/modules/alerts/service";
 import { movementSchema } from "./schema";
+import { requireRole } from "@/lib/require-role";
 
 type ActionResult =
   | { ok: true }
@@ -17,6 +18,7 @@ function blank(v: string | undefined): string | undefined {
 }
 
 export async function registerMovement(input: unknown): Promise<ActionResult> {
+  await requireRole("GESTOR", "OPERADOR");
   // O MESMO schema do formulário valida de novo aqui, no servidor.
   const parsed = movementSchema.safeParse(input);
   if (!parsed.success) {

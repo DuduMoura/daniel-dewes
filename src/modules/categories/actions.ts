@@ -1,7 +1,9 @@
 "use server";
+"use server";
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
+import { requireRole } from "@/lib/require-role";
 import { categorySchema } from "./schema";
 
 type ActionResult =
@@ -19,6 +21,7 @@ function isUniqueViolation(error: unknown): boolean {
 }
 
 export async function createCategory(input: unknown): Promise<ActionResult> {
+  await requireRole("GESTOR");
   const parsed = categorySchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, errors: parsed.error.flatten().fieldErrors };

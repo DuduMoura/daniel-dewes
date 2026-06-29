@@ -3,12 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { supplierSchema, updateSupplierSchema } from "./schema";
+import { requireRole } from "@/lib/require-role";
 
 type ActionResult =
   | { ok: true }
   | { ok: false; errors: Record<string, string[]> };
 
 export async function createSupplier(input: unknown): Promise<ActionResult> {
+  await requireRole("GESTOR");
   const parsed = supplierSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, errors: parsed.error.flatten().fieldErrors };
@@ -30,6 +32,7 @@ export async function createSupplier(input: unknown): Promise<ActionResult> {
 }
 
 export async function updateSupplier(input: unknown): Promise<ActionResult> {
+  await requireRole("GESTOR");
   const parsed = updateSupplierSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, errors: parsed.error.flatten().fieldErrors };
@@ -55,6 +58,7 @@ export async function updateSupplier(input: unknown): Promise<ActionResult> {
 }
 
 export async function deleteSupplier(id: string): Promise<ActionResult> {
+  await requireRole("GESTOR");
   await db.supplier.delete({ where: { id } });
   revalidatePath("/fornecedores");
   return { ok: true };

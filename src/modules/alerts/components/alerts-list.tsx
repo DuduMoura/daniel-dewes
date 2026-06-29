@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect } from "react";
 import { TriangleAlert } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -8,6 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { markAlertsSeen } from "../actions";
 import type { OpenAlert } from "../queries";
 
 type Props = {
@@ -15,6 +19,11 @@ type Props = {
 };
 
 export function AlertsList({ alerts }: Props) {
+  // Marca alertas como vistos ao renderizar a lista (notificação "lida")
+  useEffect(() => {
+    markAlertsSeen();
+  }, []);
+
   if (alerts.length === 0) {
     return (
       <div className="rounded-md border border-dashed py-12 text-center text-sm text-muted-foreground">

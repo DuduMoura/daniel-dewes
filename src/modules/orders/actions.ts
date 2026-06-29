@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { syncAlerts } from "@/modules/alerts/service";
 import { createOrderSchema, pickItemSchema, orderIdSchema } from "./schema";
+import { requireRole } from "@/lib/require-role";
 
 type ActionResult =
   | { ok: true; id?: string }
@@ -32,6 +33,7 @@ async function balanceAt(
 }
 
 export async function createOrder(input: unknown): Promise<ActionResult> {
+  await requireRole("GESTOR", "OPERADOR");
   const parsed = createOrderSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, errors: parsed.error.flatten().fieldErrors };
@@ -54,6 +56,7 @@ export async function createOrder(input: unknown): Promise<ActionResult> {
 
 // Confirma a coleta de um item de uma posição com saldo suficiente.
 export async function pickItem(input: unknown): Promise<ActionResult> {
+  await requireRole("GESTOR", "OPERADOR");
   const parsed = pickItemSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, errors: parsed.error.flatten().fieldErrors };
@@ -87,6 +90,7 @@ export async function pickItem(input: unknown): Promise<ActionResult> {
 
 // Expede o pedido: baixa de estoque + SAÍDA por item, tudo atômico.
 export async function shipOrder(input: unknown): Promise<ActionResult> {
+  await requireRole("GESTOR", "OPERADOR");
   const parsed = orderIdSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, errors: parsed.error.flatten().fieldErrors };
@@ -165,6 +169,7 @@ export async function shipOrder(input: unknown): Promise<ActionResult> {
 }
 
 export async function cancelOrder(input: unknown): Promise<ActionResult> {
+  await requireRole("GESTOR", "OPERADOR");
   const parsed = orderIdSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, errors: parsed.error.flatten().fieldErrors };

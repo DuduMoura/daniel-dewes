@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { syncAlerts } from "@/modules/alerts/service";
+import { requireRole } from "@/lib/require-role";
 import {
   openInventorySchema,
   countSchema,
@@ -22,6 +23,7 @@ function revalidate() {
 
 // Abre um inventário e tira o snapshot do saldo (StockItem) no escopo.
 export async function openInventory(input: unknown): Promise<ActionResult> {
+  await requireRole("GESTOR", "OPERADOR");
   const parsed = openInventorySchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, errors: parsed.error.flatten().fieldErrors };
@@ -74,6 +76,7 @@ export async function openInventory(input: unknown): Promise<ActionResult> {
 
 // Registra a contagem física de um item e calcula a diferença.
 export async function saveCount(input: unknown): Promise<ActionResult> {
+  await requireRole("GESTOR", "OPERADOR");
   const parsed = countSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, errors: parsed.error.flatten().fieldErrors };
@@ -96,6 +99,7 @@ export async function saveCount(input: unknown): Promise<ActionResult> {
 
 // Encerra o inventário ajustando o saldo de cada item contado (atômico).
 export async function closeInventory(input: unknown): Promise<ActionResult> {
+  await requireRole("GESTOR", "OPERADOR");
   const parsed = closeInventorySchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, errors: parsed.error.flatten().fieldErrors };

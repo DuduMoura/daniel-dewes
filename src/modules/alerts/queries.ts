@@ -20,3 +20,17 @@ export async function listOpenAlerts() {
     },
   });
 }
+
+// Conta alertas ABERTOS criados após a última visita do usuário à tela de alertas.
+// Se `lastSeenAt` for null, todos os alertas abertos são considerados novos.
+export async function countUnreadAlerts(
+  userId: string,
+  lastSeenAt: Date | null,
+): Promise<number> {
+  return db.alert.count({
+    where: {
+      status: "ABERTO",
+      ...(lastSeenAt ? { createdAt: { gt: lastSeenAt } } : {}),
+    },
+  });
+}

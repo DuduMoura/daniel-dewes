@@ -51,9 +51,22 @@ prisma/schema.prisma    # modelo de domínio
 
 `User` (perfis GESTOR/OPERADOR/COMPRAS), `Category`, `Supplier`, `Product`, hierarquia `Area → Aisle → Position`, `StockItem` (saldo por posição = estoque em tempo real), `Movement` (ENTRADA/SAIDA/DEVOLUCAO/TRANSFERENCIA), `Alert` (estoque mínimo), `Inventory`/`InventoryItem`.
 
-## Decisões em aberto
+## Auth e RBAC (implementado — change 2026-06-29-auth-rbac)
 
-- **Auth/RBAC adiado** — depende de hospedagem. `User` + enum `Role` já existem para plugar depois. Não implemente auth sem alinhar.
+- **Sessão JWT via `jose`** em cookie httpOnly `wms_session` (HS256, TTL 7 dias). Sem next-auth.
+- **Senha**: bcryptjs, 12 salt rounds. Campo `passwordHash String` no model `User`.
+- **Ponto único de leitura**: `src/lib/session.ts` exporta `getSession()`, `createSession()`, `deleteSession()`.
+- **Middleware** (`middleware.ts` na raiz): verifica `wms_session`; redireciona para `/login` se ausente/inválido.
+- **RBAC nas Server Actions**: `requireRole(...roles)` de `src/lib/require-role.ts` no início de toda action que muta dados.
+- **Sidebar filtrada**: `AppSidebar` recebe `user: SessionUser | null` do layout (Server Component).
+- **Bootstrap**: `npm run db:seed` cria o primeiro GESTOR a partir de `SEED_ADMIN_EMAIL`/`SEED_ADMIN_PASSWORD` no `.env`.
+- **Regras de RBAC**: GESTOR (tudo), OPERADOR (movimentações/pedidos/inventário/produtos/localização), COMPRAS (alertas/fornecedores/produtos — leitura).
+
+## Notificações de alertas (implementado — change 2026-06-29-alert-notifications)
+
+- Campo `alertsLastSeenAt DateTime?` no model `User`; atualizado ao visitar `/alertas` via `markAlertsSeen()`.
+- Badge numérico no item "Alertas" da sidebar para GESTOR e COMPRAS (contagem de alertas ABERTOS criados após `alertsLastSeenAt`).
+- Toast ao login para COMPRAS se há alertas novos (retornado por `loginAction`).
 
 ## Comandos
 

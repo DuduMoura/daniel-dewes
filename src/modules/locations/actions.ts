@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
+import { requireRole } from "@/lib/require-role";
 import {
   areaSchema,
   updateAreaSchema,
@@ -35,6 +36,7 @@ const DUP_POSITION = {
 // --- Área ---
 
 export async function createArea(input: unknown): Promise<ActionResult> {
+  await requireRole("GESTOR");
   const parsed = areaSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, errors: parsed.error.flatten().fieldErrors };
@@ -50,6 +52,7 @@ export async function createArea(input: unknown): Promise<ActionResult> {
 }
 
 export async function updateArea(input: unknown): Promise<ActionResult> {
+  await requireRole("GESTOR");
   const parsed = updateAreaSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, errors: parsed.error.flatten().fieldErrors };
@@ -66,6 +69,7 @@ export async function updateArea(input: unknown): Promise<ActionResult> {
 }
 
 export async function deleteArea(id: string): Promise<ActionResult> {
+  await requireRole("GESTOR");
   // Guarda de integridade: não remove área com corredores.
   const aisles = await db.aisle.count({ where: { areaId: id } });
   if (aisles > 0) {
@@ -84,6 +88,7 @@ export async function deleteArea(id: string): Promise<ActionResult> {
 // --- Corredor ---
 
 export async function createAisle(input: unknown): Promise<ActionResult> {
+  await requireRole("GESTOR");
   const parsed = aisleSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, errors: parsed.error.flatten().fieldErrors };
@@ -99,6 +104,7 @@ export async function createAisle(input: unknown): Promise<ActionResult> {
 }
 
 export async function updateAisle(input: unknown): Promise<ActionResult> {
+  await requireRole("GESTOR");
   const parsed = updateAisleSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, errors: parsed.error.flatten().fieldErrors };
@@ -115,6 +121,7 @@ export async function updateAisle(input: unknown): Promise<ActionResult> {
 }
 
 export async function deleteAisle(id: string): Promise<ActionResult> {
+  await requireRole("GESTOR");
   // Guarda de integridade: não remove corredor com posições.
   const positions = await db.position.count({ where: { aisleId: id } });
   if (positions > 0) {
@@ -133,6 +140,7 @@ export async function deleteAisle(id: string): Promise<ActionResult> {
 // --- Posição ---
 
 export async function createPosition(input: unknown): Promise<ActionResult> {
+  await requireRole("GESTOR");
   const parsed = positionSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, errors: parsed.error.flatten().fieldErrors };
@@ -148,6 +156,7 @@ export async function createPosition(input: unknown): Promise<ActionResult> {
 }
 
 export async function updatePosition(input: unknown): Promise<ActionResult> {
+  await requireRole("GESTOR");
   const parsed = updatePositionSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, errors: parsed.error.flatten().fieldErrors };
@@ -164,6 +173,7 @@ export async function updatePosition(input: unknown): Promise<ActionResult> {
 }
 
 export async function deletePosition(id: string): Promise<ActionResult> {
+  await requireRole("GESTOR");
   // Guarda de integridade: não remove posição com estoque, movimentações
   // ou itens de inventário vinculados.
   const [stock, movFrom, movTo, inv] = await Promise.all([
