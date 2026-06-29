@@ -28,10 +28,21 @@ services:
     region: oregon # mantenha igual ao region do banco
     autoDeploy: true
     buildCommand: npm ci && npx prisma generate && npx next build
-    startCommand: npx prisma migrate deploy && npm run start
-    healthCheckPath: /
+    startCommand: npx prisma migrate deploy && npx --yes tsx prisma/seed.ts && npm run start
+    healthCheckPath: /login # rota pública (200); "/" redireciona p/ login sem sessão
     envVars:
       - key: DATABASE_URL
         fromDatabase:
           name: wms-db
           property: connectionString
+      # Segredo de assinatura do JWT de sessão (src/lib/session.ts).
+      # O Render gera um valor forte e estável automaticamente.
+      - key: SESSION_SECRET
+        generateValue: true
+      # Primeiro usuário GESTOR, criado pelo seed (prisma/seed.ts).
+      - key: SEED_ADMIN_EMAIL
+        value: danielsilvadewe@gmail.com
+      # Senha do admin — NÃO vai para o repositório (repo público!).
+      # O Render pede este valor ao aplicar o Blueprint (defina no dashboard).
+      - key: SEED_ADMIN_PASSWORD
+        sync: false
