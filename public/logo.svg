@@ -1,0 +1,35 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#2563EB"></stop>
+            <stop offset="100%" stop-color="#1E40AF"></stop>
+        </linearGradient>
+    </defs>
+
+    <!-- Fundo -->
+    <circle cx="256" cy="256" r="220" fill="url(#grad)"></circle>
+
+    <!-- Armazém -->
+    <path d="M120 220 L256 120 L392 220 V370 H120 Z" fill="#ffffff"></path>
+
+    <!-- Porta -->
+    <rect x="216" y="250" width="80" height="120" rx="6" fill="#2563EB"></rect>
+
+    <!-- Caixas -->
+    <rect x="145" y="250" width="45" height="45" rx="4" fill="#F59E0B"></rect>
+    <rect x="145" y="305" width="45" height="45" rx="4" fill="#FBBF24"></rect>
+
+    <rect x="322" y="250" width="45" height="45" rx="4" fill="#F59E0B"></rect>
+    <rect x="322" y="305" width="45" height="45" rx="4" fill="#FBBF24"></rect>
+
+    <!-- Seta -->
+    <path d="M180 170
+             C220 135, 292 135, 332 170" fill="none" stroke="#10B981" stroke-width="14" stroke-linecap="round"></path>
+
+    <polygon points="330,150 360,175 320,182" fill="#10B981"></polygon>
+
+    <!-- Texto -->
+    <text x="256" y="455" text-anchor="middle" font-size="42" font-family="Arial, Helvetica, sans-serif" font-weight="bold" fill="#ffffff">
+        WMS
+    </text>
+</svg>
