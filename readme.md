@@ -100,8 +100,8 @@ sistemaWMS/
 
 ```bash
 # 1. Clone o repositório
-git clone https://github.com/AtomicWorm/sistemaWMS.git
-cd sistemaWMS
+git clone https://github.com/DuduMoura/daniel-dewes.git
+cd daniel-dewes
 
 # 2. Instale as dependências
 npm install
