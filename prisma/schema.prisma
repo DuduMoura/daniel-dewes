@@ -1,0 +1,282 @@
+// Schema do Sistema de Gestão de Armazém (WMS)
+// Domínio derivado do PRD.md — produtos, fornecedores, localização,
+// movimentação de estoque, alertas de mínimo e inventário.
+// Decisões: openspec/changes/wms-foundation/design.md
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────
+
+enum Role {
+  GESTOR
+  OPERADOR
+  COMPRAS
+}
+
+enum MovementType {
+  ENTRADA // recebimento de mercadoria
+  SAIDA // expedição / consumo interno
+  DEVOLUCAO // devolução (cliente ou fornecedor)
+  TRANSFERENCIA // mudança de posição dentro do armazém
+}
+
+enum AlertStatus {
+  ABERTO
+  RESOLVIDO
+}
+
+enum InventoryStatus {
+  ABERTO
+  FECHADO
+}
+
+enum OrderStatus {
+  ABERTO // criado, em separação
+  EXPEDIDO // baixa de estoque efetuada
+  CANCELADO // cancelado sem baixa
+}
+
+// ─────────────────────────────────────────────
+// Usuários e perfis (auth fica para etapa futura)
+// ─────────────────────────────────────────────
+
+model User {
+  id               String    @id @default(cuid())
+  name             String
+  email            String    @unique
+  passwordHash     String    @default("")
+  role             Role      @default(OPERADOR)
+  alertsLastSeenAt DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  movements   Movement[]
+  inventories Inventory[]
+  orders      Order[]
+}
+
+// ─────────────────────────────────────────────
+// Cadastro e organização
+// ─────────────────────────────────────────────
+
+model Category {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  products Product[]
+}
+
+model Supplier {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  contact   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products  Product[]  @relation("SupplierProducts")
+  movements Movement[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  sku         String   @unique
+  name        String
+  description String?
+  minStock    Int      @default(0) // quantidade mínima em estoque
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+  suppliers      Supplier[]      @relation("SupplierProducts")
+  stockItems     StockItem[]
+  movements      Movement[]
+  alerts         Alert[]
+  inventoryItems InventoryItem[]
+  orderItems     OrderItem[]
+
+  @@index([name])
+  @@index([categoryId])
+}
+
+// ─────────────────────────────────────────────
+// Localização: Área → Corredor → Posição
+// ─────────────────────────────────────────────
+
+model Area {
+  id     String  @id @default(cuid())
+  code   String  @unique
+  name   String
+  aisles Aisle[]
+}
+
+model Aisle {
+  id        String     @id @default(cuid())
+  code      String
+  areaId    String
+  area      Area       @relation(fields: [areaId], references: [id])
+  positions Position[]
+
+  @@unique([areaId, code])
+}
+
+model Position {
+  id      String @id @default(cuid())
+  code    String
+  aisleId String
+  aisle   Aisle  @relation(fields: [aisleId], references: [id])
+
+  stockItems     StockItem[]
+  movementsFrom  Movement[]      @relation("MovementFrom")
+  movementsTo    Movement[]      @relation("MovementTo")
+  inventoryItems InventoryItem[]
+  orderItems     OrderItem[]
+
+  @@unique([aisleId, code])
+}
+
+// ─────────────────────────────────────────────
+// Saldo por posição (fonte do estoque em tempo real)
+// ─────────────────────────────────────────────
+
+model StockItem {
+  id         String   @id @default(cuid())
+  productId  String
+  positionId String
+  quantity   Int      @default(0)
+  updatedAt  DateTime @updatedAt
+
+  product  Product  @relation(fields: [productId], references: [id])
+  position Position @relation(fields: [positionId], references: [id])
+
+  @@unique([productId, positionId])
+  @@index([productId])
+}
+
+// ─────────────────────────────────────────────
+// Movimentação de estoque
+// ─────────────────────────────────────────────
+
+model Movement {
+  id        String       @id @default(cuid())
+  type      MovementType
+  productId String
+  quantity  Int
+  note      String?
+  createdAt DateTime     @default(now())
+
+  product Product @relation(fields: [productId], references: [id])
+
+  // Posições de origem/destino conforme o tipo de movimento
+  fromPositionId String?
+  fromPosition   Position? @relation("MovementFrom", fields: [fromPositionId], references: [id])
+  toPositionId   String?
+  toPosition     Position? @relation("MovementTo", fields: [toPositionId], references: [id])
+
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id])
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  @@index([productId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+// ─────────────────────────────────────────────
+// Alertas de estoque mínimo
+// ─────────────────────────────────────────────
+
+model Alert {
+  id         String      @id @default(cuid())
+  productId  String
+  currentQty Int
+  minStock   Int
+  status     AlertStatus @default(ABERTO)
+  createdAt  DateTime    @default(now())
+  resolvedAt DateTime?
+
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([status])
+  @@index([productId])
+}
+
+// ─────────────────────────────────────────────
+// Inventário (contagem física × sistema)
+// ─────────────────────────────────────────────
+
+model Inventory {
+  id        String          @id @default(cuid())
+  status    InventoryStatus @default(ABERTO)
+  note      String?
+  createdAt DateTime        @default(now())
+  closedAt  DateTime?
+
+  createdById String?
+  createdBy   User?   @relation(fields: [createdById], references: [id])
+
+  items InventoryItem[]
+}
+
+model InventoryItem {
+  id          String  @id @default(cuid())
+  inventoryId String
+  productId   String
+  positionId  String?
+  systemQty   Int // saldo registrado no momento da abertura
+  countedQty  Int? // quantidade contada pelo operador
+  difference  Int? // countedQty - systemQty
+
+  inventory Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  product   Product   @relation(fields: [productId], references: [id])
+  position  Position? @relation(fields: [positionId], references: [id])
+
+  @@index([inventoryId])
+}
+
+// ─────────────────────────────────────────────
+// Pedidos de expedição (Fluxo 2 — separação/picking)
+// ─────────────────────────────────────────────
+
+model Order {
+  id          String      @id @default(cuid())
+  status      OrderStatus @default(ABERTO)
+  note        String?
+  createdAt   DateTime    @default(now())
+  shippedAt   DateTime?
+  createdById String?
+  createdBy   User?       @relation(fields: [createdById], references: [id])
+
+  items OrderItem[]
+
+  @@index([status])
+}
+
+model OrderItem {
+  id                   String  @id @default(cuid())
+  orderId              String
+  productId            String
+  quantity             Int // quantidade pedida
+  pickedFromPositionId String? // posição escolhida na coleta
+  picked               Boolean @default(false)
+
+  order      Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product    Product   @relation(fields: [productId], references: [id])
+  pickedFrom Position? @relation(fields: [pickedFromPositionId], references: [id])
+
+  @@index([orderId])
+}

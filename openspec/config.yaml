@@ -1,0 +1,30 @@
+schema: spec-driven
+
+context: |
+  Projeto: Sistema de Gestao de Armazem (WMS)
+  Stack: Next.js (App Router), TypeScript, Tailwind v4, shadcn/ui, Prisma + Postgres, Zod.
+  Organizacao: modulos por feature em src/modules; rotas em src/app; primitivos de UI em src/components/ui.
+  Dominio: gestao de armazem — produtos/fornecedores, movimentacao de estoque (entrada,
+  saida, devolucao, transferencia), localizacao por areas/corredores/posicoes, alerta de
+  estoque minimo e inventario. Perfis: Gestor, Operador de Estoque, Responsavel por Compras.
+  Referencia funcional: PRD.md na raiz.
+
+  Design system (OBRIGATORIO para todo front-end): toda tela segue a capability
+  `design-system` (ver openspec/specs/design-system ou a change design-system). Isso significa:
+  - Tokens de cor em src/app/globals.css: acento PRIMARIO esmeralda e SIDEBAR ESCURA (claro e escuro).
+  - Layout dentro do app-shell existente (src/app/layout.tsx + src/components/app-sidebar.tsx):
+    sidebar agrupada (Visao geral / Operacao / Cadastros) com item ativo destacado em esmeralda.
+  - Construir UI a partir dos componentes shadcn/ui em src/components/ui; nao criar do zero.
+  - Usar as variaveis de tema (--primary, --sidebar-*, --chart-*) — nunca cores hardcoded.
+
+rules:
+  proposal:
+    - Manter o proposal conciso (1 pagina).
+  specs:
+    - Para telas, incluir cenarios de estado vazio e de erro, nao so o caminho feliz.
+  design:
+    - Telas de front-end DEVEM reusar o app-shell e os tokens do design-system; declarar
+      explicitamente quais componentes de src/components/ui serao usados.
+    - Nunca introduzir cores fora dos tokens de tema (esmeralda + sidebar escura).
+  tasks:
+    - Quebrar tarefas em itens pequenos, verificaveis, em uma sessao cada.
